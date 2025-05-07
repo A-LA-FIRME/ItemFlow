@@ -1,0 +1,7 @@
+flask==2.3.3
+flask-cors==4.0.0
+pyodbc==4.0.39
+python-dotenv==1.0.0
+azure-identity==1.14.0
+azure-keyvault-secrets==4.7.0
+humanize==4.7.0

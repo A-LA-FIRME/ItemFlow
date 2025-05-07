@@ -1,0 +1,7 @@
+CREATE TABLE items (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL UNIQUE,
+    description NVARCHAR(MAX),
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    created_at DATETIME DEFAULT GETDATE()
+);
