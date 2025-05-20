@@ -20,7 +20,8 @@ toastr.options = {
  */
 class ApiService {
     constructor() {
-        this.baseUrl = 'http://localhost:5000/api';
+        const { protocol, host } = window.location;
+        this.baseUrl = `${protocol}//${host}/api`;
     }
 
     /**
