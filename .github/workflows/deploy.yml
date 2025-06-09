@@ -50,8 +50,8 @@ jobs:
         name: ${{ env.CONTAINER_NAME }}
         location: 'East US 2'
         ports: '5000'
-        cpu: 1
-        memory: 1.5
+        cpu: 2
+        memory: 2
         environment-variables: |
           DB_SERVER=${{ secrets.DB_SERVER }}
           DB_NAME=${{ secrets.DB_NAME }}
