@@ -2,9 +2,12 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
+    # Solo monta volúmenes en desarrollo
     volumes:
       - .:/app
       - ./static:/app/static
@@ -14,4 +17,22 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - FLASK_ENV=development
     restart: unless-stopped
+
+  # Servicio para testing de producción (sin volúmenes)
+  api-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_SERVER=${DB_SERVER}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - FLASK_ENV=production
+    restart: unless-stopped
+    profiles:
+      - prod

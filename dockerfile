@@ -21,10 +21,17 @@ RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor 
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and setup the application
+# Copy requirements first for better Docker layer caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
 COPY . .
+
+# Create a non-root user for security
+RUN useradd --create-home --shell /bin/bash app \
+    && chown -R app:app /app
+USER app
 
 EXPOSE 5000
 
