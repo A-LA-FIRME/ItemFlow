@@ -38,25 +38,35 @@ jobs:
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
-    - name: Deploy to Azure Container Instances
-      uses: azure/aci-deploy@v1
-      with:
-        resource-group: ${{ env.RESOURCE_GROUP }}
-        dns-name-label: flask-app-${{ github.run_number }}
-        image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-        registry-login-server: ${{ env.REGISTRY_NAME }}.azurecr.io
-        registry-username: ${{ secrets.ACR_USERNAME }}
-        registry-password: ${{ secrets.ACR_PASSWORD }}
-        name: ${{ env.CONTAINER_NAME }}
-        location: 'East US 2'
-        ports: '5000'
-        cpu: 2
-        memory: 2
-        environment-variables: |
-          DB_SERVER=${{ secrets.DB_SERVER }}
-          DB_NAME=${{ secrets.DB_NAME }}
-          DB_USER=${{ secrets.DB_USER }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+    - name: Deploy to Azure Container Instances with CLI
+      run: |
+        # Eliminar contenedor existente si existe
+        az container delete \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.CONTAINER_NAME }} \
+          --yes || true
+
+        # Esperar a que se complete la eliminación
+        sleep 30
+
+        # Crear nuevo contenedor
+        az container create \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.CONTAINER_NAME }} \
+          --image ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          --registry-login-server ${{ env.REGISTRY_NAME }}.azurecr.io \
+          --registry-username ${{ secrets.ACR_USERNAME }} \
+          --registry-password ${{ secrets.ACR_PASSWORD }} \
+          --dns-name-label flask-app-${{ github.run_number }} \
+          --ports 5000 \
+          --cpu 2 \
+          --memory 2 \
+          --location "East US 2" \
+          --environment-variables \
+            DB_SERVER=${{ secrets.DB_SERVER }} \
+            DB_NAME=${{ secrets.DB_NAME }} \
+            DB_USER=${{ secrets.DB_USER }} \
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
 
     - name: Logout from Azure
       run: az logout
