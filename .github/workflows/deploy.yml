@@ -57,17 +57,31 @@ jobs:
     # Eliminar contenedor existente
     - name: Delete existing container instance
       run: |
-        echo "Deleting existing container..."
-        az container delete \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --name ${{ env.CONTAINER_NAME }} \
-          --yes || echo "Container doesn't exist or already deleted"
+        echo "Checking if container exists..."
+        if az container show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CONTAINER_NAME }} &>/dev/null; then
+          echo "Container exists, deleting..."
+          az container delete \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name ${{ env.CONTAINER_NAME }} \
+            --yes
+          echo "Container deletion initiated"
+        else
+          echo "Container doesn't exist, skipping deletion"
+        fi
 
     # Esperar a que se complete la eliminación
     - name: Wait for container deletion
       run: |
         echo "Waiting for deletion to complete..."
-        sleep 45
+        # Esperar hasta que el contenedor ya no exista
+        for i in {1..30}; do
+          if ! az container show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CONTAINER_NAME }} &>/dev/null; then
+            echo "Container successfully deleted"
+            break
+          fi
+          echo "Waiting... ($i/30)"
+          sleep 3
+        done
 
     # Deploy con Azure CLI para mejor control
     - name: Deploy to Azure Container Instances
@@ -86,6 +100,7 @@ jobs:
           --cpu 2 \
           --memory 2 \
           --location "East US 2" \
+          --os-type Linux \
           --restart-policy Always \
           --environment-variables \
             DB_SERVER=${{ secrets.DB_SERVER }} \
@@ -107,10 +122,15 @@ jobs:
     - name: Show container logs
       if: failure()
       run: |
-        echo "Container logs:"
-        az container logs \
-          --resource-group ${{ env.RESOURCE_GROUP }} \
-          --name ${{ env.CONTAINER_NAME }}
+        echo "Attempting to show container logs..."
+        if az container show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CONTAINER_NAME }} &>/dev/null; then
+          echo "Container logs:"
+          az container logs \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name ${{ env.CONTAINER_NAME }}
+        else
+          echo "Container not found, cannot show logs"
+        fi
 
     - name: Logout from Azure
       run: az logout
